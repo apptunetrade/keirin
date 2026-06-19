@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f97316">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="競輪ラボ">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>競輪 勝利の方程式</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
+  :root {
+    --bg-deep:#0a0e1a;--bg-card:#111827;--bg-input:#1a2235;--border:#1e3050;
+    --accent:#f97316;--accent2:#fb923c;--gold:#fbbf24;--blue:#38bdf8;
+    --green:#34d399;--red:#f87171;--text:#e2e8f0;--muted:#64748b;
+    --mono:'Share Tech Mono',monospace;--sans:'Noto Sans JP',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg-deep);color:var(--text);font-family:var(--sans);min-height:100vh;padding-bottom:60px;}
+  header{background:linear-gradient(135deg,#0a0e1a,#0f172a,#0a1628);border-bottom:2px solid var(--accent);padding:16px 20px;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(249,115,22,.03) 60px,rgba(249,115,22,.03) 61px);}
+  .hi{position:relative;max-width:900px;margin:0 auto;}
+  .eyebrow{font-size:10px;letter-spacing:.3em;color:var(--accent);font-family:var(--mono);margin-bottom:4px;text-transform:uppercase;}
+  h1{font-size:clamp(20px,5vw,30px);font-weight:900;letter-spacing:.05em;color:#fff;}
+  h1 span{color:var(--accent);}
+  .formula{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;}
+  .container{max-width:900px;margin:0 auto;padding:20px 14px;}
+  .sec{font-size:10px;letter-spacing:.25em;color:var(--accent);font-family:var(--mono);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .sec::after{content:'';flex:1;height:1px;background:var(--border);}
+  /* Race Panel */
+  .race-panel{background:linear-gradient(135deg,#0f1e36,#111827);border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:18px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .race-panel::before{content:'RACE INFO';position:absolute;top:10px;right:14px;font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:rgba(249,115,22,.2);}
+  .tabs{display:flex;margin-bottom:14px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+  .tab{flex:1;padding:10px 8px;background:var(--bg-deep);border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.05em;}
+  .tab.active{background:rgba(249,115,22,.15);color:var(--accent);border-bottom:2px solid var(--accent);}
+  .hint{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--blue);margin-bottom:12px;line-height:1.8;}
+  .hint b{color:#7dd3fc;}
+  textarea.paste{width:100%;min-height:120px;background:var(--bg-deep);border:2px dashed rgba(249,115,22,.3);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;outline:none;resize:vertical;transition:border-color .2s;margin-bottom:12px;}
+  textarea.paste:focus{border-color:var(--accent);border-style:solid;}
+  textarea.paste::placeholder{color:var(--muted);font-size:11px;}
+  .btn-race{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),#ea580c);border:none;border-radius:8px;color:#fff;font-family:var(--sans);font-size:14px;font-weight:900;letter-spacing:.1em;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-race:disabled{opacity:.5;cursor:not-allowed;}
+  /* Image upload */
+  .img-preview-wrap{position:relative;margin-bottom:12px;display:none;}
+  .img-preview-wrap img{width:100%;max-height:240px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:var(--bg-deep);}
+  .img-clear{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:50%;color:var(--text);width:26px;height:26px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .pdf-badge{text-align:center;padding:20px;display:none;}
+  .upload-area{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+  .upload-row{background:var(--bg-deep);border:1.5px solid rgba(249,115,22,.35);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;}
+  .upload-row .ico{font-size:24px;flex-shrink:0;}
+  .upload-row .lbl{font-size:12px;color:var(--muted);flex:1;}
+  .upload-row .lbl b{display:block;font-size:13px;color:var(--text);margin-bottom:2px;}
+  .upload-row input[type=file]{font-size:13px;color:var(--text);background:transparent;border:none;width:100%;max-width:200px;}
+  /* Status / Preview */
+  .race-status{margin-top:10px;font-size:12px;min-height:18px;}
+  .race-status.loading{color:var(--blue);}
+  .race-status.ok{color:var(--green);}
+  .race-status.err{color:var(--red);}
+  .race-preview{margin-top:12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;padding:12px;display:none;}
+  .preview-title{font-size:10px;color:var(--accent);letter-spacing:.2em;font-family:var(--mono);margin-bottom:10px;}
+  .preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+  @media(max-width:480px){.preview-grid{grid-template-columns:repeat(2,1fr);}}
+  .pv-player{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg-card);border-radius:6px;border:1px solid var(--border);}
+  .pv-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .pv-name{font-size:12px;font-weight:700;}
+  .btn-apply{width:100%;padding:10px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.4);border-radius:8px;color:var(--green);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;}
+  /* Line editor */
+  .line-editor{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;}
+  .line-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:9px;}
+  .line-tag{font-family:var(--mono);font-size:11px;color:var(--muted);width:50px;}
+  .line-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .15s;}
+  .line-btn.active{background:rgba(249,115,22,.15);border-color:var(--accent);color:var(--accent);}
+  /* Player card */
+  .player-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;transition:border-color .2s;}
+  .card-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .pnum{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;font-weight:700;flex-shrink:0;}
+  .n1{background:#fff;color:#000;}.n2{background:#1a56db;color:#fff;}.n3{background:#e02424;color:#fff;}
+  .n4{background:#c27803;color:#fff;}.n5{background:#057a55;color:#fff;}.n6{background:#5521b5;color:#fff;}
+  .n7{background:#f97316;color:#fff;}.n8{background:#be185d;color:#fff;}.n9{background:#374151;color:#fff;}
+  .name-input{background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:14px;font-weight:700;padding:6px 10px;width:150px;outline:none;transition:border-color .2s;}
+  .name-input:focus{border-color:var(--accent);}
+  .name-input::placeholder{color:var(--muted);font-weight:400;}
+  .score-badge{margin-left:auto;text-align:right;}
+  .score-lbl{font-size:10px;color:var(--muted);}
+  .score-val{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--gold);line-height:1;}
+  .score-val.hi{color:var(--accent);}.score-val.lo{color:var(--muted);}
+  .inputs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;}
+  .ig label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px;}
+  .ig input,.ig select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;padding:7px 9px;outline:none;transition:border-color .2s;}
+  .ig input:focus,.ig select:focus{border-color:var(--accent);}
+  .ig select{appearance:none;cursor:pointer;}
+  .m-wrap{display:flex;align-items:center;gap:8px;}
+  .m-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none;}
+  .m-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;}
+  .m-val{font-family:var(--mono);font-size:14px;color:var(--accent);width:22px;text-align:right;}
+  .breakdown{margin-top:10px;display:flex;gap:5px;flex-wrap:wrap;}
+  .bd{font-size:10px;font-family:var(--mono);color:var(--muted);background:var(--bg-deep);padding:2px 6px;border-radius:4px;border:1px solid var(--border);}
+  .bd span{color:var(--text);}
+  /* AI btn */
+  .ai-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(59,130,246,.2));border:1px solid rgba(139,92,246,.4);border-radius:6px;color:#a78bfa;font-size:11px;font-family:var(--sans);font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;margin-top:12px;}
+  .ai-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .ai-result{margin-top:10px;background:linear-gradient(135deg,rgba(139,92,246,.07),rgba(15,23,42,.8));border:1px solid rgba(139,92,246,.25);border-radius:8px;padding:12px;font-size:11px;line-height:1.8;display:none;}
+  .ai-result.show{display:block;}
+  .ai-result-hdr{font-size:10px;color:#a78bfa;letter-spacing:.2em;font-family:var(--mono);margin-bottom:8px;display:flex;justify-content:space-between;}
+  .ai-apply{padding:4px 10px;background:var(--accent);border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+  .ai-msug{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);border-radius:6px;}
+  /* Buttons */
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0;}
+  .btn{padding:10px 20px;border-radius:8px;border:none;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+  /* Results */
+  .result-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:20px;}
+  .rtable{width:100%;border-collapse:collapse;font-size:13px;}
+  .rtable th{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.15em;text-align:left;padding:8px;border-bottom:1px solid var(--border);}
+  .rtable td{padding:9px 8px;border-bottom:1px solid rgba(30,48,80,.5);vertical-align:middle;}
+  .rank-total{font-family:var(--mono);font-size:17px;font-weight:700;text-align:right;}
+  .mbar-bg{height:6px;background:var(--bg-deep);border-radius:3px;overflow:hidden;width:100%;min-width:70px;}
+  .mbar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.22,.68,0,1.2);}
+  .win-prob{font-family:var(--mono);font-size:11px;padding:2px 6px;border-radius:4px;background:rgba(249,115,22,.12);color:var(--accent2);text-align:right;white-space:nowrap;}
+  .tri-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:10px;}
+  .tri-card{background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;padding:12px;}
+  .tri-lbl{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;}
+  .tri-combo{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--gold);letter-spacing:.2em;}
+  .tri-why{font-size:10px;color:var(--muted);margin-top:4px;}
+  .tips{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:12px;font-size:11px;color:var(--blue);margin-top:14px;line-height:1.8;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;}
+  @media(max-width:600px){
+    .inputs-grid{grid-template-columns:1fr 1fr;}
+    .card-header{flex-wrap:wrap;}
+    .btn-race{font-size:14px;padding:13px;}
+    .name-input{width:130px;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hi">
+    <div class="eyebrow">KEIRIN ANALYSIS TOOL</div>
+    <h1>競輪 <span>勝利の方程式</span></h1>
+    <div class="formula">期待値 = 能力値 + L指数 + M指数</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 出走表入力 -->
+  <div class="sec">出走表から自動入力</div>
+  <div class="race-panel">
+    <div class="tabs">
+      <button class="tab active" id="tab-text" onclick="switchTab('text')">📋 テキスト貼り付け</button>
+      <button class="tab" id="tab-img" onclick="switchTab('img')">🖼️ 画像・PDF</button>
+    </div>
+
+    <!-- テキスト -->
+    <div id="mode-text">
+      <div class="hint">💡 競輪サイトの出走表を全選択コピーして貼り付けてください。どんな形式でもAIが解析します。</div>
+      <textarea class="paste" id="pasteArea" placeholder="出走表テキストを貼り付け&#10;例：&#10;1 山田太郎 東京 105.2 逃げ&#10;2 鈴木次郎 神奈川 98.6 差し&#10;..."></textarea>
+      <button class="btn-race" id="pasteBtn" onclick="analyzePaste()">
+        <span id="pasteIcon">🤖</span><span id="pasteLbl">AIで出走表を解析する</span>
+      </button>
+    </div>
+
+    <!-- 画像・PDF -->
+    <div id="mode-img" style="display:none;">
+      <div class="hint" id="img-hint"></div>
+      <div class="img-preview-wrap" id="imgWrap">
+        <img id="imgEl" src="" alt="" style="display:none;">
+        <div class="pdf-badge" id="pdfBadge">
+          <div style="font-size:40px;">📄</div>
+          <div id="pdfName" style="font-size:12px;margin-top:6px;word-break:break-all;"></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">PDFを読み込みました</div>
+        </div>
+        <button class="img-clear" onclick="clearImg()">✕</button>
+      </div>
+      <div class="upload-area" id="uploadArea"></div>
+      <button class="btn-race" id="imgBtn" onclick="analyzeImg()" disabled style="margin-top:10px;">
+        <span id="imgIcon">🤖</span><span id="imgLbl">画像から出走表を解析する</span>
+      </button>
+    </div>
+
+    <div class="race-status" id="raceStatus"></div>
+    <div class="race-preview" id="racePreview">
+      <div class="preview-title">◆ 解析結果プレビュー</div>
+      <div class="preview-grid" id="previewGrid"></div>
+      <button class="btn-apply" onclick="applyRace()">✅ 選手名・ライン編成をカードに反映する</button>
+    </div>
+  </div>
+
+  <!-- ライン設定 -->
+  <div class="sec">ライン設定</div>
+  <div class="line-editor">
+    <div id="lineEditor"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;">同じラインの選手に同じ番号をクリック。ライン人数がL指数に反映されます。</div>
+  </div>
+
+  <!-- 選手入力 -->
+  <div class="sec">選手データ入力</div>
+  <div id="playersContainer"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="calcAll()">🔍 期待値を計算する</button>
+    <button class="btn btn-ghost" onclick="resetAll()">🗑️ データをクリア</button>
+  </div>
+
+  <!-- 結果 -->
+  <div id="resultArea" style="display:none;">
+    <div class="result-panel">
+      <div class="sec">期待値ランキング</div>
+      <table class="rtable">
+        <thead><tr>
+          <th>順位</th><th>選手</th><th>能力値</th><th>L指数</th><th>M指数</th><th>期待値</th><th style="text-align:right">WIN予測</th>
+        </tr></thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+      <div style="margin-top:18px;">
+        <div class="sec">3連単 推奨フォーメーション</div>
+        <div class="tri-grid" id="triGrid"></div>
+      </div>
+      <div class="tips" id="comment"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PC = 9;
+const LC = ['#f97316','#38bdf8','#34d399','#f472b6','#a78bfa','#facc15'];
+let lineAssign = Array(PC).fill(0);
+let raceData = null, aiSug = {}, imgB64 = null, imgType = 'image/png';
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+// ── Init ──────────────────────────────────────────────────
+function init() { buildLineEditor(); buildCards(); buildUploadUI(); }
+
+function buildLineEditor() {
+  const lc = ['#f97316','#38bdf8','#34d399','#f472b6','#a78bfa'];
+  let h = '';
+  for (let i = 0; i < PC; i++) {
+    h += `<div class="line-row"><span class="pnum n${i+1}" style="width:26px;height:26px;font-size:12px;">${i+1}</span><span class="line-tag">ライン:</span>`;
+    for (let l = 1; l <= 5; l++) h += `<button class="line-btn" id="lb_${i}_${l}" onclick="setLine(${i},${l})" style="border-color:${lc[l-1]}33;">${l}</button>`;
+    h += `<button class="line-btn" id="lb_${i}_0" onclick="setLine(${i},0)">なし</button></div>`;
+  }
+  document.getElementById('lineEditor').innerHTML = h;
+  refreshLines();
+}
+function setLine(i, l) { lineAssign[i] = l; refreshLines(); }
+function refreshLines() {
+  const lc = ['#f97316','#38bdf8','#34d399','#f472b6','#a78bfa'];
+  for (let i = 0; i < PC; i++) for (let l = 0; l <= 5; l++) {
+    const b = document.getElementById(`lb_${i}_${l}`); if (!b) continue;
+    b.classList.toggle('active', lineAssign[i] === l);
+    if (l > 0) b.style.background = lineAssign[i] === l ? `${lc[l-1]}33` : '';
+  }
+}
+
+// ── Player Cards ──────────────────────────────────────────
+function buildCards() {
+  let h = '';
+  for (let i = 0; i < PC; i++) {
+    h += `<div class="player-card" id="pc_${i}">
+      <div class="card-header">
+        <div class="pnum n${i+1}">${i+1}</div>
+        <input type="text" class="name-input" id="nm_${i}" placeholder="選手名 ${i+1}">
+        <div class="score-badge"><div class="score-lbl">期待値</div><div class="score-val" id="ev_${i}">—</div></div>
+      </div>
+      <div class="inputs-grid">
+        <div class="ig"><label>競走得点</label><input type="number" id="kp_${i}" placeholder="例:105.6" step="0.1" min="0" oninput="liveCalc(${i})"></div>
+        <div class="ig"><label>バック数</label><input type="number" id="bk_${i}" placeholder="例:3" min="0" oninput="liveCalc(${i})"></div>
+        <div class="ig"><label>決まり手（マーク以外）</label>
+          <select id="km_${i}" onchange="liveCalc(${i})">
+            <option value="3">差し・逃げ</option><option value="2">捲り</option>
+            <option value="1">マーク系</option><option value="0">不明</option>
+          </select></div>
+        <div class="ig"><label>年齢（35超で減点）</label><input type="number" id="ag_${i}" placeholder="例:38" min="15" max="60" oninput="liveCalc(${i})"></div>
+        <div class="ig" style="grid-column:span 2"><label>M指数（モチベーション 0〜10）</label>
+          <div class="m-wrap"><input type="range" class="m-slider" id="ms_${i}" min="0" max="10" value="5"
+            oninput="document.getElementById('mv_${i}').textContent=this.value;liveCalc(${i})">
+            <span class="m-val" id="mv_${i}">5</span></div></div>
+      </div>
+      <button class="ai-btn" id="aib_${i}" onclick="aiAnalyze(${i})"><span>🤖</span> 選手データ自動入力</button>
+      <div class="ai-result" id="air_${i}">
+        <div class="ai-result-hdr"><span>◆ AI AUTO-FILL</span><span id="aisrc_${i}" style="color:var(--muted);font-size:9px;"></span></div>
+        <div id="aitags_${i}" style="display:none;margin-bottom:8px;">
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;" id="aitagw_${i}"></div>
+          <button class="ai-apply" style="width:100%;padding:8px;" onclick="applyAll(${i})">✅ すべてをカードに反映</button>
+        </div>
+        <div id="aitxt_${i}" style="color:var(--text);white-space:pre-wrap;font-size:11px;"></div>
+        <div class="ai-msug" id="aims_${i}" style="display:none;">
+          <span style="font-size:11px;color:var(--muted);">推奨M指数</span>
+          <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);" id="aimn_${i}">—</span>
+          <button class="ai-apply" onclick="applyM(${i})">M指数のみ反映</button>
+        </div>
+      </div>
+      <div class="breakdown" id="bd_${i}"></div>
+    </div>`;
+  }
+  document.getElementById('playersContainer').innerHTML = h;
+}
+
+// ── Calc ──────────────────────────────────────────────────
+function lineCounts() { const c={}; lineAssign.forEach(l=>{ if(l>0) c[l]=(c[l]||0)+1; }); return c; }
+function calcP(i) {
+  const kp=parseFloat(document.getElementById(`kp_${i}`).value)||0;
+  const bk=parseFloat(document.getElementById(`bk_${i}`).value)||0;
+  const km=parseFloat(document.getElementById(`km_${i}`).value)||0;
+  const ag=parseFloat(document.getElementById(`ag_${i}`).value)||0;
+  const m=parseFloat(document.getElementById(`ms_${i}`).value)||5;
+  const pen=Math.max(0,ag-35);
+  const nou=kp+bk+km-pen;
+  const lc=lineCounts(), ml=lineAssign[i];
+  const lm=ml>0?(lc[ml]||1):1, L=lm*3;
+  return {kp,bk,km,pen,nou,L,lm,m,total:nou+L+m};
+}
+function liveCalc(i) {
+  const d=calcP(i), el=document.getElementById(`ev_${i}`);
+  if(!d.kp){el.textContent='—';el.className='score-val';return;}
+  el.textContent=d.total.toFixed(1);
+  el.className='score-val'+(d.total>=130?' hi':d.total<100?' lo':'');
+  document.getElementById(`bd_${i}`).innerHTML=`
+    <span class="bd">競走得点 <span>${d.kp}</span></span>
+    <span class="bd">バック <span>+${d.bk}</span></span>
+    <span class="bd">決まり手 <span>+${d.km}</span></span>
+    ${d.pen>0?`<span class="bd" style="color:var(--red)">年齢 <span style="color:var(--red)">−${d.pen}</span></span>`:''}
+    <span class="bd">能力値 <span>${d.nou.toFixed(1)}</span></span>
+    <span class="bd">L指数 <span>+${d.L}(${d.lm}名)</span></span>
+    <span class="bd">M指数 <span>+${d.m}</span></span>`;
+}
+function calcAll() {
+  const res=[];
+  for(let i=0;i<PC;i++){const d=calcP(i);const nm=document.getElementById(`nm_${i}`).value.trim()||`選手${i+1}`;res.push({i,nm,...d});liveCalc(i);}
+  const v=res.filter(r=>r.kp>0);
+  if(!v.length){alert('競走得点を入力してください。');return;}
+  v.sort((a,b)=>b.total-a.total);
+  const mn=Math.min(...v.map(r=>r.total));
+  const bs=v.map(r=>Math.exp((r.total-mn)*.06)), bsum=bs.reduce((a,b)=>a+b,0);
+  const wp=bs.map(b=>(b/bsum*100).toFixed(1));
+  const mx=v[0].total, bc=['#f97316','#fbbf24','#38bdf8','#34d399','#a78bfa','#64748b','#64748b','#64748b','#64748b'];
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('rankBody').innerHTML=v.map((r,rk)=>{
+    const pct=Math.min(100,(r.total/(mx*1.05))*100), col=bc[rk]||'#64748b';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted);width:30px;">${medals[rk]||(rk+1)}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div class="pnum n${r.i+1}" style="width:24px;height:24px;font-size:11px;">${r.i+1}</div><span style="font-weight:700;">${r.nm}</span></div>
+        <div class="mbar-bg" style="margin-top:4px;"><div class="mbar-fill" style="width:${pct}%;background:${col};"></div></div></td>
+      <td style="font-family:var(--mono);color:var(--blue)">${r.nou.toFixed(1)}</td>
+      <td style="font-family:var(--mono);color:var(--green)">+${r.L}</td>
+      <td style="font-family:var(--mono);color:var(--accent)">+${r.m}</td>
+      <td class="rank-total" style="color:${rk===0?'var(--accent)':rk===1?'var(--gold)':'var(--text)'}">${r.total.toFixed(1)}</td>
+      <td><div class="win-prob">${wp[rk]}%</div></td>
+    </tr>`;
+  }).join('');
+  buildTri(v); buildComment(v);
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resultArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function buildTri(v) {
+  if(v.length<3){document.getElementById('triGrid').innerHTML='';return;}
+  const t=v, combos=[
+    {lbl:'本命軸',combo:`${t[0].i+1}→${t[1].i+1}→${t[2].i+1}`,why:'上位3名の期待値順。最も安定。',col:'var(--accent)'},
+    {lbl:'逆順ヒモ',combo:`${t[0].i+1}→${t[2].i+1}→${t[1].i+1}`,why:'2・3着入れ替え。ライン絡みに注意。',col:'var(--gold)'},
+  ];
+  if(t.length>=4){combos.push({lbl:'穴①',combo:`${t[0].i+1}→${t[1].i+1}→${t[3].i+1}`,why:'4位を3着に。中穴狙い。',col:'var(--blue)'});
+    combos.push({lbl:'穴②',combo:`${t[1].i+1}→${t[0].i+1}→${t[3].i+1}`,why:'2位軸で1位がコケた保険。',col:'var(--green)'});}
+  if(t.length>=5) combos.push({lbl:'大穴',combo:`${t[0].i+1}→${t[3].i+1}→${t[4].i+1}`,why:'高配当狙い。',col:'#a78bfa'});
+  document.getElementById('triGrid').innerHTML=combos.map(c=>`<div class="tri-card"><div class="tri-lbl">${c.lbl}</div><div class="tri-combo" style="color:${c.col}">${c.combo}</div><div class="tri-why">${c.why}</div></div>`).join('');
+}
+function buildComment(v) {
+  const top=v[0], gap=v.length>1?(top.total-v[1].total).toFixed(1):'—', lc=lineCounts();
+  const ml=Object.entries(lc).sort((a,b)=>b[1]-a[1])[0];
+  let s=`📊 <strong>分析コメント</strong><br>▶ 最高期待値: <strong>${top.nm}</strong>（${top.total.toFixed(1)}点）｜2位との差: ${gap}点<br>`;
+  if(ml) s+=`▶ 最大ライン: ライン${ml[0]}（${ml[1]}名）→ L指数 +${ml[1]*3}<br>`;
+  if(top.pen>0) s+=`▶ ${top.nm} は35歳超過 −${top.pen}点ハンデ<br>`;
+  const hm=v.filter(r=>r.m>=8);
+  if(hm.length) s+=`▶ M指数8以上: ${hm.map(r=>r.nm).join('・')}<br>`;
+  document.getElementById('comment').innerHTML=s;
+}
+
+// ── Reset ─────────────────────────────────────────────────
+function resetAll() {
+  if(!confirm('すべてのデータをクリアしますか？')) return;
+  lineAssign=Array(PC).fill(0); refreshLines(); buildCards();
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('pasteArea').value='';
+  imgB64=null;
+  document.getElementById('imgWrap').style.display='none';
+  document.getElementById('uploadArea').style.display='';
+  document.getElementById('imgBtn').disabled=true;
+  setStatus('','');
+  document.getElementById('racePreview').style.display='none';
+  raceData=null; aiSug={};
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Tab switch ────────────────────────────────────────────
+function switchTab(m) {
+  document.getElementById('tab-text').classList.toggle('active',m==='text');
+  document.getElementById('tab-img').classList.toggle('active',m==='img');
+  document.getElementById('mode-text').style.display=m==='text'?'':'none';
+  document.getElementById('mode-img').style.display=m==='img'?'':'none';
+  setStatus('','');
+  document.getElementById('racePreview').style.display='none';
+}
+
+// ── Upload UI ─────────────────────────────────────────────
+function buildUploadUI() {
+  const hint=document.getElementById('img-hint');
+  const ua=document.getElementById('uploadArea');
+  if(isMobile) {
+    hint.innerHTML='💡 <b>写真・PDFから選択</b>するか、<b>カメラで撮影</b>してください。';
+    ua.innerHTML=`
+      <div class="upload-row">
+        <span class="ico">🖼️</span>
+        <span class="lbl"><b>ギャラリー・PDF</b>写真・スクリーンショット・PDF</span>
+        <input type="file" accept="image/*,application/pdf" onchange="loadFile(event)">
+      </div>
+      <div class="upload-row" style="border-color:rgba(56,189,248,.35);">
+        <span class="ico">📷</span>
+        <span class="lbl"><b>カメラ撮影</b>その場で撮影する</span>
+        <input type="file" accept="image/*" capture="environment" onchange="loadFile(event)">
+      </div>`;
+  } else {
+    hint.innerHTML='💡 画像・PDFを<b>ドラッグ＆ドロップ</b>またはクリックで選択。<b>Ctrl+V</b>貼り付けも対応。';
+    ua.innerHTML=`
+      <div class="upload-row" id="dropZone" style="min-height:90px;justify-content:center;cursor:pointer;flex-direction:column;gap:8px;border-style:dashed;"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor=''"
+        ondrop="handleDrop(event)">
+        <input type="file" accept="image/*,application/pdf" onchange="loadFile(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+        <span style="font-size:28px;">📂</span>
+        <span style="font-size:12px;color:var(--muted);">クリックまたはドラッグ＆ドロップ<br>PNG・JPG・PDF対応 / Ctrl+Vも可</span>
+      </div>`;
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];
+  if(f&&(f.type.startsWith('image/')||f.type==='application/pdf')) loadFile({target:{files:[f]}});
+}
+document.addEventListener('paste',e=>{
+  if(isMobile) return;
+  if(!document.getElementById('tab-img').classList.contains('active')) return;
+  const items=e.clipboardData?.items; if(!items) return;
+  for(const it of items) if(it.type.startsWith('image/')){loadFile({target:{files:[it.getAsFile()]}});break;}
+});
+
+function loadFile(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const isPDF=f.type==='application/pdf';
+  imgType=f.type||'image/png';
+  const r=new FileReader();
+  r.onload=ev=>{
+    imgB64=ev.target.result.split(',')[1];
+    const img=document.getElementById('imgEl'), badge=document.getElementById('pdfBadge');
+    if(isPDF){img.style.display='none';badge.style.display='block';document.getElementById('pdfName').textContent=f.name;}
+    else{img.src=ev.target.result;img.style.display='block';badge.style.display='none';}
+    document.getElementById('imgWrap').style.display='block';
+    document.getElementById('uploadArea').style.display='none';
+    document.getElementById('imgBtn').disabled=false;
+    document.getElementById('imgLbl').textContent=isPDF?'PDFから解析する':'画像から解析する';
+    setStatus('ok',`✔ ${isPDF?'PDF「'+f.name+'」':'画像'}を読み込みました`);
+  };
+  r.readAsDataURL(f);
+}
+function clearImg() {
+  imgB64=null;
+  document.getElementById('imgEl').src='';
+  document.getElementById('imgWrap').style.display='none';
+  document.getElementById('uploadArea').style.display='';
+  document.getElementById('imgBtn').disabled=true;
+  setStatus('','');
+  document.getElementById('racePreview').style.display='none';
+}
+
+// ── Status helper ─────────────────────────────────────────
+function setStatus(cls,msg) {
+  const s=document.getElementById('raceStatus');
+  s.className='race-status'+(cls?' '+cls:'');
+  s.textContent=msg;
+}
+
+// ── Shared API prompt ─────────────────────────────────────
+const JSON_PROMPT=`あなたは競輪の専門アナリストです。出走表を解析して各選手の情報とライン編成を抽出してください。
+【抽出ルール】車番(1〜9)・選手名・都道府県・ライン・先行/番手/三番手/単騎の役割・競走得点・決まり手を読み取る。
+必ずJSON形式のみで回答（前後テキスト・マークダウン不要）:
+{"race_title":"","grade":"","players":[{"car_no":1,"name":"","pref":"","kpt":0,"kimari":"不明","line_group":1,"line_role":"先行"}],"parse_note":""}`;
+
+async function callAPI(messages) {
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages})
+  });
+  const d=await r.json();
+  let t='';
+  if(d.content) for(const b of d.content) if(b.type==='text') t+=b.text;
+  const m=t.replace(/```json|```/g,'').match(/\{[\s\S]*\}/);
+  if(!m) throw new Error('解析結果を取得できませんでした');
+  return JSON.parse(m[0]);
+}
+
+// ── Paste analyze ─────────────────────────────────────────
+async function analyzePaste() {
+  const txt=document.getElementById('pasteArea').value.trim();
+  if(!txt||txt.length<5){alert('出走表テキストを貼り付けてください。');return;}
+  const btn=document.getElementById('pasteBtn');
+  btn.disabled=true;
+  document.getElementById('pasteIcon').innerHTML='<span class="spinner"></span>';
+  document.getElementById('pasteLbl').textContent='AI解析中...';
+  setStatus('loading','🤖 出走表テキストを解析しています...');
+  document.getElementById('racePreview').style.display='none';
+  raceData=null;
+  try {
+    const result=await callAPI([{role:'user',content:`${JSON_PROMPT}\n\n【出走表テキスト】\n${txt.slice(0,4000)}`}]);
+    if(!result.players?.length) throw new Error('選手情報を読み取れませんでした');
+    raceData=result; buildPreview(result);
+    setStatus('ok',`✅ ${result.players.length}名を解析 ${result.race_title?'— '+result.race_title:''}`);
+    document.getElementById('racePreview').style.display='block';
+  } catch(e){setStatus('err','❌ '+e.message);}
+  finally{btn.disabled=false;document.getElementById('pasteIcon').textContent='🤖';document.getElementById('pasteLbl').textContent='再解析';}
+}
+
+// ── Image analyze ─────────────────────────────────────────
+async function analyzeImg() {
+  if(!imgB64){alert('先に画像を選択してください。');return;}
+  const btn=document.getElementById('imgBtn');
+  const isPDF=imgType==='application/pdf';
+  btn.disabled=true;
+  document.getElementById('imgIcon').innerHTML='<span class="spinner"></span>';
+  document.getElementById('imgLbl').textContent=isPDF?'PDF解析中...':'画像解析中...';
+  setStatus('loading',isPDF?'🤖 PDFを読み取っています...':'🤖 画像を読み取っています...');
+  document.getElementById('racePreview').style.display='none';
+  raceData=null;
+  try {
+    const content=isPDF
+      ?[{type:'document',source:{type:'base64',media_type:'application/pdf',data:imgB64}},{type:'text',text:JSON_PROMPT}]
+      :[{type:'image',source:{type:'base64',media_type:imgType,data:imgB64}},{type:'text',text:JSON_PROMPT}];
+    const result=await callAPI([{role:'user',content}]);
+    if(!result.players?.length) throw new Error('選手情報を読み取れませんでした');
+    raceData=result; buildPreview(result);
+    setStatus('ok',`✅ ${result.players.length}名を${isPDF?'PDFから':'画像から'}読み取りました ${result.race_title?'— '+result.race_title:''}`);
+    document.getElementById('racePreview').style.display='block';
+  } catch(e){setStatus('err','❌ '+e.message);}
+  finally{btn.disabled=false;document.getElementById('imgIcon').textContent='🤖';document.getElementById('imgLbl').textContent='再解析';}
+}
+
+// ── Preview & Apply ───────────────────────────────────────
+function buildPreview(result) {
+  document.getElementById('previewGrid').innerHTML=result.players.map(p=>{
+    const lg=p.line_group||0, lc=lg>0?(LC[(lg-1)%LC.length]):'#475569';
+    const role=(p.line_role==='単騎'||!lg)?'<span style="font-size:9px;color:var(--muted);">単騎</span>'
+      :`<span style="font-size:9px;color:${lc};">L${lg} ${p.line_role||''}</span>`;
+    return `<div class="pv-player">
+      <div class="pnum n${p.car_no}" style="width:22px;height:22px;font-size:10px;flex-shrink:0;">${p.car_no}</div>
+      <div><div class="pv-name">${p.name}</div>
+        <div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+          <div class="pv-dot" style="background:${lc};"></div>${role}
+          ${p.pref?`<span style="font-size:9px;color:var(--muted);">${p.pref}</span>`:''}
+          ${p.kpt?`<span style="font-size:9px;color:var(--blue);font-family:var(--mono);">${p.kpt}pt</span>`:''}
+        </div></div></div>`;
+  }).join('');
+}
+function applyRace() {
+  if(!raceData?.players) return;
+  lineAssign=Array(PC).fill(0);
+  raceData.players.forEach(p=>{
+    const idx=(p.car_no||0)-1; if(idx<0||idx>=PC) return;
+    const nm=document.getElementById(`nm_${idx}`); if(nm) nm.value=p.name;
+    lineAssign[idx]=(p.line_role==='単騎'||!p.line_group)?0:p.line_group;
+    if(p.kpt>0){const el=document.getElementById(`kp_${idx}`);if(el) el.value=p.kpt;}
+    if(p.kimari){const km={'差し・逃げ':'3','捲り':'2','マーク系':'1','不明':'0'}[p.kimari];
+      const sel=document.getElementById(`km_${idx}`);if(sel&&km) sel.value=km;}
+    liveCalc(idx);
+  });
+  refreshLines();
+  raceData.players.forEach(p=>{const c=document.getElementById(`pc_${(p.car_no||1)-1}`);
+    if(c){c.style.borderColor='var(--green)';setTimeout(()=>c.style.borderColor='',1500);}});
+  document.getElementById('racePreview').querySelector('.btn-apply').textContent='✅ 反映済み！各カードでAI分析を実行してください';
+  document.getElementById('playersContainer').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── AI Auto-Fill ──────────────────────────────────────────
+async function aiAnalyze(i) {
+  const nm=document.getElementById(`nm_${i}`).value.trim();
+  if(!nm){alert('先に選手名を入力してください。');return;}
+  const btn=document.getElementById(`aib_${i}`);
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> 検索中...';
+  const box=document.getElementById(`air_${i}`); box.classList.add('show');
+  document.getElementById(`aitxt_${i}`).textContent='選手情報を検索しています...';
+  document.getElementById(`aims_${i}`).style.display='none';
+  document.getElementById(`aitags_${i}`).style.display='none';
+
+  const prompt=`競輪選手【${nm}】の最新情報を調べ以下をJSONのみで回答（前後テキスト不要）:
+{"kpt":数値,"back":数値,"kimari":"差し・逃げまたは捲りまたはマーク系または不明","age":数値,"m_score":数値0-10,"recent_info":"2-3行","m_reason":"2-3行","confidence":"highまたはmediumまたはlow"}
+M指数基準値5。地元+2,G1+2,好調連勝+2,ケガ明け-3,遠征疲れ-1`;
+
+  try {
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    let txt='',ws=false;
+    if(d.content) for(const b of d.content){if(b.type==='tool_use'&&b.name==='web_search')ws=true;if(b.type==='text')txt+=b.text;}
+    const m=txt.match(/\{[\s\S]*?\}/); if(!m) throw new Error('解析失敗');
+    const p=JSON.parse(m[0]);
+    const ms=Math.min(10,Math.max(0,Math.round(p.m_score||5)));
+    const kv={'差し・逃げ':'3','捲り':'2','マーク系':'1','不明':'0'}[p.kimari]||'0';
+    aiSug[i]={kp:p.kpt||0,bk:p.back||0,kv,ag:p.age||0,ms};
+    const cc=p.confidence==='high'?'var(--green)':p.confidence==='medium'?'var(--gold)':'var(--red)';
+    const cl=p.confidence==='high'?'確度:高':p.confidence==='medium'?'確度:中':'確度:低';
+    document.getElementById(`aitagw_${i}`).innerHTML=[
+      p.kpt?`<span class="bd">競走得点 <span>${p.kpt}</span></span>`:'',
+      `<span class="bd">バック数 <span>${p.back||0}</span></span>`,
+      p.kimari?`<span class="bd">決まり手 <span>${p.kimari}</span></span>`:'',
+      p.age?`<span class="bd">年齢 <span>${p.age}歳</span></span>`:'',
+      `<span class="bd">M指数 <span style="color:var(--accent)">${ms}</span></span>`,
+      `<span class="bd" style="color:${cc}">${cl}</span>`,
+    ].join('');
+    document.getElementById(`aitxt_${i}`).textContent=`【直近情報】\n${p.recent_info||'情報なし'}\n\n【M指数評価】\n${p.m_reason||''}`;
+    document.getElementById(`aimn_${i}`).textContent=ms;
+    document.getElementById(`aitags_${i}`).style.display='block';
+    document.getElementById(`aims_${i}`).style.display='inline-flex';
+    document.getElementById(`aisrc_${i}`).textContent=ws?'WEB検索あり':'学習データ';
+  } catch(e){document.getElementById(`aitxt_${i}`).textContent='エラー: '+e.message;}
+  finally{btn.disabled=false;btn.innerHTML='<span>🤖</span> 再取得';}
+}
+function applyAll(i) {
+  const d=aiSug[i]; if(!d) return;
+  if(d.kp) document.getElementById(`kp_${i}`).value=d.kp;
+  document.getElementById(`bk_${i}`).value=d.bk;
+  if(d.ag) document.getElementById(`ag_${i}`).value=d.ag;
+  document.getElementById(`km_${i}`).value=d.kv;
+  document.getElementById(`ms_${i}`).value=d.ms;
+  document.getElementById(`mv_${i}`).textContent=d.ms;
+  liveCalc(i);
+  const c=document.getElementById(`pc_${i}`);
+  c.style.borderColor='var(--green)'; setTimeout(()=>c.style.borderColor='',1500);
+  const btn=document.getElementById(`aib_${i}`);
+  btn.innerHTML='<span>✅</span> 反映済み'; btn.style.borderColor='var(--green)'; btn.style.color='var(--green)';
+}
+function applyM(i) {
+  const d=aiSug[i]; if(!d) return;
+  document.getElementById(`ms_${i}`).value=d.ms;
+  document.getElementById(`mv_${i}`).textContent=d.ms;
+  liveCalc(i);
+  const c=document.getElementById(`pc_${i}`);
+  c.style.borderColor='var(--accent)'; setTimeout(()=>c.style.borderColor='',1200);
+}
+
+init();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW error', e));
+  });
+}
+</script>
+</body>
+</html>
